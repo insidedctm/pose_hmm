@@ -168,11 +168,14 @@ def video_overlay(video_path, frames_with_pose, states):
     cnt += 1
 
 def overlay(image, state):
+  state_number = STATE_NAMES.index(state)
+  overlay_rectangles(image, state_number)
+
   # font
   font = cv2.FONT_HERSHEY_SIMPLEX
   
   # org
-  org = (50, 50)
+  org = (30, 120)
   
   # fontScale
   fontScale = 1
@@ -186,6 +189,27 @@ def overlay(image, state):
   # Using cv2.putText() method
   image = cv2.putText(image, str(state), org, font, 
                    fontScale, color, thickness, cv2.LINE_AA)    
+  return image
+
+def overlay_rectangles(image, state):
+  h, w = 50, 50
+  offset = 20
+  starts = [(offset+ix*w,offset) for ix in range(5)]
+  ends   = [(offset+w+ix*w, offset+h) for ix in range(5)]
+  for ix, (start_point, end_point) in enumerate(zip(starts, ends)):
+    image = overlay_rectangle(image, state == ix, start_point, end_point)
+  return image
+
+def overlay_rectangle(image, fill, start_point, end_point):
+ 
+  # Blue color in BGR 
+  color = (255, 0, 0) 
+  
+  # Line thickness of 2 px 
+  thickness = -1 if fill else 2
+
+  image = cv2.rectangle(image, start_point, end_point, color, thickness) 
+
   return image
 
 def parse_args():
