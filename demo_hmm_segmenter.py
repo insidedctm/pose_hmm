@@ -139,6 +139,13 @@ def neg_log(x):
   else:
     return -np.log(x)
 
+STATE_NAMES = [
+     'Waiting to Start',
+     'On all fours',
+     'Back on heels',
+     'Full extension',
+     'Finished' ]
+
 def video_overlay(video_path, frames_with_pose, states):
   print(len(frames_with_pose))
   print(len(states))
@@ -153,7 +160,9 @@ def video_overlay(video_path, frames_with_pose, states):
     if not ret:
       break
     if overlay_states[cnt] >= 0:
-      frame = overlay(frame, overlay_states[cnt])
+      state = overlay_states[cnt]
+      state_name = STATE_NAMES[state]
+      frame = overlay(frame, state_name)
     cv2.imshow('hmm demo', frame)
     cv2.waitKey(25)
     cnt += 1
