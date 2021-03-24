@@ -6,10 +6,11 @@ import cv2
 import mediapipe as mp
 mp_pose = mp.solutions.pose
 import numpy as np
+from video_writer import VideoWriter
 
 MAX_FLOAT = np.finfo(np.float32).max
 
-def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path):
+def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, video_out_path):
 
   # setup a list to hold the frame number for frames that have a valid pose
   #   (required to align hmm state history when overlaying onto video)
@@ -28,6 +29,8 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path):
       top_n_by_mean_distance=10)
 
   cap = cv2.VideoCapture(video_path)  
+  writer = VideoWriter(cap, video_out_path)
+
   # initialise Pose estimator for whole video
   pose = mp_pose.Pose(
             min_detection_confidence=0.5,
@@ -94,7 +97,8 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path):
   print(states)
 
   # overlay onto video
-  video_overlay(video_path, pose_frames, states)  
+  video_overlay(video_path, pose_frames, states, writer)  
+  writer.release()
     
 def viterbi(U, P):
   print('>>> viterbi')
@@ -146,7 +150,7 @@ STATE_NAMES = [
      'Full extension',
      'Finished' ]
 
-def video_overlay(video_path, frames_with_pose, states):
+def video_overlay(video_path, frames_with_pose, states, video_writer):
   print(len(frames_with_pose))
   print(len(states))
   overlay_states = np.full(len(frames_with_pose), -1)
@@ -163,6 +167,7 @@ def video_overlay(video_path, frames_with_pose, states):
       state = overlay_states[cnt]
       state_name = STATE_NAMES[state]
       frame = overlay(frame, state_name)
+    video_writer(frame)
     cv2.imshow('hmm demo', frame)
     cv2.waitKey(25)
     cnt += 1
@@ -216,11 +221,17 @@ def parse_args():
   parser.add_argument('video_path')
   parser.add_argument('classifier_samples_path')
   parser.add_argument('prior_model_path')
+  parser.add_argument('--out_path', default=None)
   return parser.parse_args()
 
 if __name__ == '__main__':
   args = parse_args()
   print(args)
 
-  demo_hmm_segmenter(args.video_path, args.classifier_samples_path, args.prior_model_path)
+  demo_hmm_segmenter(
+                      args.video_path, 
+                      args.classifier_samples_path, 
+                      args.prior_model_path, 
+                      args.out_path
+  )
 
