@@ -46,7 +46,7 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path):
   P = make_array_neg_log(P)
 
   # Unary potentials for observations lattice (see Computer Vision (Prince) s11.2)
-  U = [[-np.log(1), MAX_FLOAT, MAX_FLOAT, MAX_FLOAT, MAX_FLOAT]]
+  U = [[1., 0., 0., 0., 0.]]
 
   cnt=0
   while True:
@@ -76,11 +76,11 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path):
   
       # add each p(w|x) to lattice
       U.append([
-		0., 
+		p_w_bar_x['childs_pose_start'] if 'childs_pose_start' in p_w_bar_x else 0., 
 		p_w_bar_x['childs_pose_allfours'] if 'childs_pose_allfours' in p_w_bar_x else 0., 
 		p_w_bar_x['childs_pose_backonheels'] if 'childs_pose_backonheels' in p_w_bar_x else 0., 
 		p_w_bar_x['childs_pose_throughshoulders'] if 'childs_pose_throughshoulders' in p_w_bar_x else 0., 
-		0.])
+		p_w_bar_x['childs_pose_end'] if 'childs_pose_end' in p_w_bar_x else 0.])
     else:
       pose_frames.append(-1)  
     cnt += 1
