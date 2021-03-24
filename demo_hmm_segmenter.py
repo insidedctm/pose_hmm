@@ -170,24 +170,23 @@ def video_overlay(video_path, frames_with_pose, states):
 def overlay(image, state):
   state_number = STATE_NAMES.index(state)
   overlay_rectangles(image, state_number)
+  overlay_text(image, state, (30, 120))
+  if state == 'Full extension':
+    overlay_text(image, "CALCULATE CORRECTIONS", (30, 160), (0, 0, 255))
+  return image 
 
+def overlay_text(image, text, org, color=(255, 0, 0)):
   # font
   font = cv2.FONT_HERSHEY_SIMPLEX
-  
-  # org
-  org = (30, 120)
   
   # fontScale
   fontScale = 1
    
-  # Blue color in BGR
-  color = (255, 0, 0)
-  
   # Line thickness of 2 px
   thickness = 2
 
   # Using cv2.putText() method
-  image = cv2.putText(image, str(state), org, font, 
+  image = cv2.putText(image, text, org, font, 
                    fontScale, color, thickness, cv2.LINE_AA)    
   return image
 
