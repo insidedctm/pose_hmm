@@ -11,11 +11,6 @@ from video_writer import VideoWriter
 MAX_FLOAT = np.finfo(np.float32).max
 
 def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, video_out_path):
-
-  # setup a list to hold the frame number for frames that have a valid pose
-  #   (required to align hmm state history when overlaying onto video)
-  pose_frames = []
-
   prior_model = PriorObservationProbModel(prior_model_path)
 
   # Transforms pose landmarks into embedding.
@@ -28,8 +23,8 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, 
       top_n_by_max_distance=30,
       top_n_by_mean_distance=10)
 
-  cap = cv2.VideoCapture(video_path)  
-  writer = VideoWriter(cap, video_out_path)
+  
+  
 
   # initialise Pose estimator for whole video
   pose = mp_pose.Pose(
@@ -51,6 +46,15 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, 
   # Unary potentials for observations lattice (see Computer Vision (Prince) s11.2)
   U = [[1., 0., 0., 0., 0.]]
 
+  offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U)
+
+def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U):
+
+  # setup a list to hold the frame number for frames that have a valid pose
+  #   (required to align hmm state history when overlaying onto video)
+  pose_frames = []
+
+  cap = cv2.VideoCapture(video_path) 
   cnt=0
   while True:
     ret, frame = cap.read()
@@ -74,8 +78,8 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, 
       print(f'P(w|x): {p_w_bar_x}')
   
       h, w = frame.shape[0], frame.shape[1]
-      p_x = prior_model(pose_landmarks, h, w)
-      print(f'[{cnt}] P(x): {p_x} (log={np.log(p_x)})')
+      #p_x = prior_model(pose_landmarks, h, w)
+      #print(f'[{cnt}] P(x): {p_x} (log={np.log(p_x)})')
   
       # add each p(w|x) to lattice
       U.append([
@@ -97,6 +101,7 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, 
   print(states)
 
   # overlay onto video
+  writer = VideoWriter(cap, video_out_path)
   video_overlay(video_path, pose_frames, states, writer)  
   writer.release()
     
