@@ -6,6 +6,7 @@ import mediapipe as mp
 mp_pose = mp.solutions.pose
 import numpy as np
 from video_writer import VideoWriter
+import time
 
 MAX_FLOAT = np.finfo(np.float32).max
 
@@ -57,10 +58,13 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
   priorU = make_array_neg_log(np.array(U[0]))  
   cap = cv2.VideoCapture(video_path)
   while True:
+    t0 = time.perf_counter()
     ret, frame = cap.read()
     if not ret:
       break
+    t1 = time.perf_counter()
     results = pose.process(frame)
+    t2 = time.perf_counter()
     pose_landmarks = results.pose_landmarks  
     if pose_landmarks:
 
@@ -70,7 +74,9 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
                  for lmk in pose_landmarks.landmark],
                 dtype=np.float32)
       assert pose_landmarks.shape == (33, 3), 'Unexpected landmarks shape: {}'.format(pose_landmarks.shape)
+      t2a = time.perf_counter()
       p_w_bar_x = {k:v/10. for k,v in sorted(pose_classifier(pose_landmarks).items(), key=lambda item: item[1], reverse=True)}
+      t2b = time.perf_counter()
       print(f'P(w|x): {p_w_bar_x}')
       # add each p(w|x) to lattice
       U = make_array_neg_log(np.array([
@@ -80,10 +86,21 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
 		p_w_bar_x['childs_pose_throughshoulders'] if 'childs_pose_throughshoulders' in p_w_bar_x else 0., 
 		p_w_bar_x['childs_pose_end'] if 'childs_pose_end' in p_w_bar_x else 0.]))
 
+      t3 = time.perf_counter()
       state, priorU = online_viterbi(priorU, U, P)
+      t4 = time.perf_counter()
 
       state_name = STATE_NAMES[state]
       frame = overlay(frame, state_name)
+      t5 = time.perf_counter()
+
+      print(t0, t1, t2, t2a, t3, t4, t5)
+      print(f'Total iteration time: {round((t5-t0)*1000,2)}ms; ' + 
+            f'pose estimation: {round((t2-t1)*1000,2)}ms; ' + 
+            f'pose classification: {round((t2b-t2a)*1000,2)}ms; ' + 
+            f'viterbi: {round((t4-t3)*1000,2)}ms;' +
+            f' overlay: {round((t5-t4)*1000,2)}ms'
+      )
 
     cv2.imshow('online segmenter', frame)  
     cv2.waitKey(15)
