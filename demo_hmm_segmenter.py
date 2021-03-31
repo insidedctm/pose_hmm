@@ -1,5 +1,4 @@
 import argparse
-from prior_obs_prob_model import PriorObservationProbModel
 from pose_embedder import FullBodyPoseEmbedder
 from pose_classifier import PoseClassifier
 import cv2
@@ -10,8 +9,7 @@ from video_writer import VideoWriter
 
 MAX_FLOAT = np.finfo(np.float32).max
 
-def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, mode, video_out_path):
-  prior_model = PriorObservationProbModel(prior_model_path)
+def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_path):
 
   # Transforms pose landmarks into embedding.
   pose_embedder = FullBodyPoseEmbedder()
@@ -120,8 +118,6 @@ def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, 
       print(f'P(w|x): {p_w_bar_x}')
   
       h, w = frame.shape[0], frame.shape[1]
-      #p_x = prior_model(pose_landmarks, h, w)
-      #print(f'[{cnt}] P(x): {p_x} (log={np.log(p_x)})')
   
       # add each p(w|x) to lattice
       U.append([
@@ -278,7 +274,6 @@ def parse_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('video_path')
   parser.add_argument('classifier_samples_path')
-  parser.add_argument('prior_model_path')
   parser.add_argument('--mode', default='Offline', help='Offline|Online (default=Offline)')
   parser.add_argument('--out_path', default=None)
   return parser.parse_args()
@@ -290,7 +285,6 @@ if __name__ == '__main__':
   demo_hmm_segmenter(
                       args.video_path, 
                       args.classifier_samples_path, 
-                      args.prior_model_path, 
                       args.mode,
                       args.out_path
   )
