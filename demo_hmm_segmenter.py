@@ -10,7 +10,7 @@ from video_writer import VideoWriter
 
 MAX_FLOAT = np.finfo(np.float32).max
 
-def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, video_out_path):
+def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, mode, video_out_path):
   prior_model = PriorObservationProbModel(prior_model_path)
 
   # Transforms pose landmarks into embedding.
@@ -44,9 +44,51 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, prior_model_path, 
   P = make_array_neg_log(P)
 
   # Unary potentials for observations lattice (see Computer Vision (Prince) s11.2)
+  #   We always start in state 0
   U = [[1., 0., 0., 0., 0.]]
 
-  offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U)
+  if mode == 'Offline':
+    offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U)
+  elif mode == 'Online':
+    online_hmm_segmenter(video_path, pose, pose_classifier, P, U)
+  else:
+    print('unrecognised mode - use either --mode Offline or --mode Online')
+
+def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
+  # first turn probabilities in U into neg log
+  priorU = make_array_neg_log(np.array(U[0]))  
+  cap = cv2.VideoCapture(video_path)
+  while True:
+    ret, frame = cap.read()
+    if not ret:
+      break
+    results = pose.process(frame)
+    pose_landmarks = results.pose_landmarks  
+    if pose_landmarks:
+
+      frame_height, frame_width = frame.shape[0], frame.shape[1]
+      pose_landmarks = np.array(
+              [[lmk.x * frame_width, lmk.y * frame_height, lmk.z * frame_width]
+                 for lmk in pose_landmarks.landmark],
+                dtype=np.float32)
+      assert pose_landmarks.shape == (33, 3), 'Unexpected landmarks shape: {}'.format(pose_landmarks.shape)
+      p_w_bar_x = {k:v/10. for k,v in sorted(pose_classifier(pose_landmarks).items(), key=lambda item: item[1], reverse=True)}
+      print(f'P(w|x): {p_w_bar_x}')
+      # add each p(w|x) to lattice
+      U = make_array_neg_log(np.array([
+		p_w_bar_x['childs_pose_start'] if 'childs_pose_start' in p_w_bar_x else 0., 
+		p_w_bar_x['childs_pose_allfours'] if 'childs_pose_allfours' in p_w_bar_x else 0., 
+		p_w_bar_x['childs_pose_backonheels'] if 'childs_pose_backonheels' in p_w_bar_x else 0., 
+		p_w_bar_x['childs_pose_throughshoulders'] if 'childs_pose_throughshoulders' in p_w_bar_x else 0., 
+		p_w_bar_x['childs_pose_end'] if 'childs_pose_end' in p_w_bar_x else 0.]))
+
+      state, priorU = online_viterbi(priorU, U, P)
+
+      state_name = STATE_NAMES[state]
+      frame = overlay(frame, state_name)
+
+    cv2.imshow('online segmenter', frame)  
+    cv2.waitKey(15)
 
 def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U):
 
@@ -104,6 +146,17 @@ def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, 
   writer = VideoWriter(cap, video_out_path)
   video_overlay(video_path, pose_frames, states, writer)  
   writer.release()
+
+def online_viterbi(priorU, U, P):
+
+  # number of states
+  K = P.shape[0]
+
+  for k in range(K):
+    costs = [priorU[j] + P[j,k] + U[k] for j in range(K)]
+    U[k] = min(costs)
+    state = np.argmin(U[:])
+  return state, U
     
 def viterbi(U, P):
   print('>>> viterbi')
@@ -226,6 +279,7 @@ def parse_args():
   parser.add_argument('video_path')
   parser.add_argument('classifier_samples_path')
   parser.add_argument('prior_model_path')
+  parser.add_argument('--mode', default='Offline', help='Offline|Online (default=Offline)')
   parser.add_argument('--out_path', default=None)
   return parser.parse_args()
 
@@ -237,6 +291,7 @@ if __name__ == '__main__':
                       args.video_path, 
                       args.classifier_samples_path, 
                       args.prior_model_path, 
+                      args.mode,
                       args.out_path
   )
 
