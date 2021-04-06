@@ -151,7 +151,7 @@ def online_viterbi(priorU, U, P):
   for k in range(K):
     costs = [priorU[j] + P[j,k] + U[k] for j in range(K)]
     U[k] = min(costs)
-    state = np.argmin(U[:])
+  state = np.argmin(U[:])
   return state, U
     
 def viterbi(U, P):
