@@ -70,12 +70,8 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
       p_w_bar_x = {k:v/10. for k,v in sorted(pose_classifier(pose_landmarks).items(), key=lambda item: item[1], reverse=True)}
       print(f'P(w|x): {p_w_bar_x}')
       # add each p(w|x) to lattice
-      U = make_array_neg_log(np.array([
-		p_w_bar_x['childs_pose_start'] if 'childs_pose_start' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_allfours'] if 'childs_pose_allfours' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_backonheels'] if 'childs_pose_backonheels' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_throughshoulders'] if 'childs_pose_throughshoulders' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_end'] if 'childs_pose_end' in p_w_bar_x else 0.]))
+      state_names = ['childs_pose_start', 'childs_pose_allfours', 'childs_pose_backonheels', 'childs_pose_throughshoulders', 'childs_pose_end']
+      U = make_array_neg_log(np.array([p_w_bar_x[state_name] if state_name in p_w_bar_x else 0. for state_name in state_names])) 
 
       state, priorU = online_viterbi(priorU, U, P)
 
@@ -117,12 +113,8 @@ def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, 
       h, w = frame.shape[0], frame.shape[1]
   
       # add each p(w|x) to lattice
-      U.append([
-		p_w_bar_x['childs_pose_start'] if 'childs_pose_start' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_allfours'] if 'childs_pose_allfours' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_backonheels'] if 'childs_pose_backonheels' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_throughshoulders'] if 'childs_pose_throughshoulders' in p_w_bar_x else 0., 
-		p_w_bar_x['childs_pose_end'] if 'childs_pose_end' in p_w_bar_x else 0.])
+      state_names = ['childs_pose_start', 'childs_pose_allfours', 'childs_pose_backonheels', 'childs_pose_throughshoulders', 'childs_pose_end']
+      U.append([p_w_bar_x[state_name] if state_name in p_w_bar_x else 0. for state_name in state_names])
     else:
       pose_frames.append(-1)  
     cnt += 1
