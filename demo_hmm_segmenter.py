@@ -34,9 +34,13 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_pa
   P = np.loadtxt('transition_matrix.csv', delimiter=',')
   P = make_array_neg_log(P)
 
+  # P is a KxK state transition matrix, store K
+  K = P.shape[0]
+
   # Unary potentials for observations lattice (see Computer Vision (Prince) s11.2)
   #   We always start in state 0
-  U = [[1., 0., 0., 0., 0.]]
+  U = [[0.] * K]
+  U[0][0] = 1.
 
   if mode == 'Offline':
     offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, U)
