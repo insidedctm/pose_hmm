@@ -31,14 +31,7 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_pa
   )
 
   # Setup transition matrix (Pair potentials)
-  P = np.array([
-        [ 0.46, 0.44, 0.001, 0.099, 0.0   ],
-        [ 0.0,  0.7,  0.2,   0.099, 0.001 ],
-        [ 0.0,  0.001,  0.7,   0.298, 0.001 ],
-        [ 0.0,  0.0005,  0.0015,   0.898, 0.1],
-        [ 0.0,  0.0,  0.0,   0.0,   1.0]
-  ])
-
+  P = np.loadtxt('transition_matrix.csv', delimiter=',')
   P = make_array_neg_log(P)
 
   # Unary potentials for observations lattice (see Computer Vision (Prince) s11.2)
