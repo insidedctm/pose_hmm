@@ -7,6 +7,7 @@ mp_pose = mp.solutions.pose
 import numpy as np
 from video_writer import VideoWriter
 import json
+import airtable
 
 MAX_FLOAT = np.finfo(np.float32).max
 
@@ -277,8 +278,13 @@ if __name__ == '__main__':
   args = parse_args()
   print(args)
 
+  video_path = args.video_path
+  if video_path.isnumeric():
+    video_path = airtable.download_video_by_ref(video_path)
+
+
   demo_hmm_segmenter(
-                      args.video_path, 
+                      video_path, 
                       args.classifier_samples_path, 
                       args.mode,
                       args.out_path
