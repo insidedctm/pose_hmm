@@ -76,7 +76,7 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
 
       state, priorU = online_viterbi(priorU, U, P)
 
-      state_name = STATE_NAMES[state]
+      state_name = STATE_DESCRIPTIONS[state]
       frame = overlay(frame, state_name)
 
     cv2.imshow('online segmenter', frame)  
@@ -187,13 +187,6 @@ def neg_log(x):
   else:
     return -np.log(x)
 
-STATE_NAMES = [
-     'Waiting to Start',
-     'On all fours',
-     'Back on heels',
-     'Full extension',
-     'Finished' ]
-
 def video_overlay(video_path, frames_with_pose, states, video_writer):
   print(len(frames_with_pose))
   print(len(states))
@@ -209,7 +202,7 @@ def video_overlay(video_path, frames_with_pose, states, video_writer):
       break
     if overlay_states[cnt] >= 0:
       state = overlay_states[cnt]
-      state_name = STATE_NAMES[state]
+      state_name = STATE_DESCRIPTIONS[state]
       frame = overlay(frame, state_name)
     video_writer(frame)
     cv2.imshow('hmm demo', frame)
@@ -217,7 +210,7 @@ def video_overlay(video_path, frames_with_pose, states, video_writer):
     cnt += 1
 
 def overlay(image, state):
-  state_number = STATE_NAMES.index(state)
+  state_number = STATE_DESCRIPTIONS.index(state)
   overlay_rectangles(image, state_number)
   overlay_text(image, state, (30, 120))
   if state == 'Full extension':
@@ -262,8 +255,15 @@ def overlay_rectangle(image, fill, start_point, end_point):
 
 def get_state_names():
   with open('states.json', 'r') as filehandle:
-    state_names = json.load(filehandle)
+    state_names = json.load(filehandle)['state_names']
   return state_names
+
+def get_state_descriptions():
+  with open('states.json', 'r') as filehandle:
+    state_descriptions = json.load(filehandle)['state_descriptions']
+  return state_descriptions
+
+STATE_DESCRIPTIONS = get_state_descriptions()
 
 def parse_args():
   parser = argparse.ArgumentParser()

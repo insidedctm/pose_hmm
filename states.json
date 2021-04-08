@@ -1,1 +1,1 @@
-["childs_pose_start", "childs_pose_allfours", "childs_pose_backonheels", "childs_pose_throughshoulders", "childs_pose_end"]
+{"state_names": ["childs_pose_start", "childs_pose_allfours", "childs_pose_backonheels", "childs_pose_throughshoulders", "childs_pose_end"], "state_descriptions": ["Waiting to Start", "On all fours", "Back on heels", "Full extension", "Finished"]}
