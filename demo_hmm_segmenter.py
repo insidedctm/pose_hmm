@@ -77,7 +77,7 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U):
       state, priorU = online_viterbi(priorU, U, P)
 
       state_name = STATE_DESCRIPTIONS[state]
-      frame = overlay(frame, state_name)
+      frame = overlay(frame, state_name, len(state_names))
 
     cv2.imshow('online segmenter', frame)  
     cv2.waitKey(15)
@@ -203,15 +203,15 @@ def video_overlay(video_path, frames_with_pose, states, video_writer):
     if overlay_states[cnt] >= 0:
       state = overlay_states[cnt]
       state_name = STATE_DESCRIPTIONS[state]
-      frame = overlay(frame, state_name)
+      frame = overlay(frame, state_name, len(STATE_DESCRIPTIONS))
     video_writer(frame)
     cv2.imshow('hmm demo', frame)
     cv2.waitKey(25)
     cnt += 1
 
-def overlay(image, state):
+def overlay(image, state, K):
   state_number = STATE_DESCRIPTIONS.index(state)
-  overlay_rectangles(image, state_number)
+  overlay_rectangles(image, state_number, K)
   overlay_text(image, state, (30, 120))
   if state == 'Full extension':
     overlay_text(image, "CALCULATE CORRECTIONS", (30, 160), (0, 0, 255))
@@ -232,11 +232,11 @@ def overlay_text(image, text, org, color=(255, 0, 0)):
                    fontScale, color, thickness, cv2.LINE_AA)    
   return image
 
-def overlay_rectangles(image, state):
+def overlay_rectangles(image, state, num_states):
   h, w = 50, 50
   offset = 20
-  starts = [(offset+ix*w,offset) for ix in range(5)]
-  ends   = [(offset+w+ix*w, offset+h) for ix in range(5)]
+  starts = [(offset+ix*w,offset) for ix in range(num_states)]
+  ends   = [(offset+w+ix*w, offset+h) for ix in range(num_states)]
   for ix, (start_point, end_point) in enumerate(zip(starts, ends)):
     image = overlay_rectangle(image, state == ix, start_point, end_point)
   return image
