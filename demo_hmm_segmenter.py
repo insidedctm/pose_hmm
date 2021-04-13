@@ -10,9 +10,11 @@ import json
 import airtable
 from rep_counter import RepCounter
 
+STATES_JSON = 'states.json' # default value
+STATE_DESCRIPTIONS = []
 MAX_FLOAT = np.finfo(np.float32).max
 
-def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_path, count_reps):
+def demo_hmm_segmenter(video_path, classifier_samples_folder, transition_matrix, mode, video_out_path, count_reps):
 
   # Transforms pose landmarks into embedding.
   pose_embedder = FullBodyPoseEmbedder()
@@ -34,7 +36,7 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_pa
   )
 
   # Setup transition matrix (Pair potentials)
-  P = np.loadtxt('transition_matrix.csv', delimiter=',')
+  P = np.loadtxt(transition_matrix, delimiter=',')
   P = make_array_neg_log(P)
 
   # P is a KxK state transition matrix, store K
@@ -55,7 +57,9 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, mode, video_out_pa
 def online_hmm_segmenter(video_path, pose, pose_classifier, P, U, count_reps):
   if count_reps:
     # setup the rep counter
-    reps = RepCounter(1,3)
+    num_states = P.shape[0]
+    print(f'num_states={num_states}')
+    reps = RepCounter(1,num_states-2)
 
   # first turn probabilities in U into neg log
   priorU = make_array_neg_log(np.array(U[0]))  
@@ -143,7 +147,11 @@ def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, 
 
   # overlay onto video
   writer = VideoWriter(cap, video_out_path)
-  video_overlay(video_path, pose_frames, states, writer, count_reps)  
+  if count_reps:
+    num_states = P.shape[0]
+    video_overlay(video_path, pose_frames, states, writer, num_states)  
+  else:
+    video_overlay(video_path, pose_frames, states, writer, 0)
   writer.release()
 
 def online_viterbi(priorU, U, P):
@@ -209,7 +217,9 @@ def video_overlay(video_path, frames_with_pose, states, video_writer, count_reps
   mask = [el >= 0 for el in frames_with_pose]
   overlay_states[mask] = states
   if count_reps:
-    overlay_reps[mask] = RepCounter.reps_from_states(states, 1, 3)
+    num_states = count_reps  # function is called with count_reps = number states
+    print(f'num_states={num_states}')
+    overlay_reps[mask] = RepCounter.reps_from_states(states, 1, num_states-2)
     overlay_reps = fill_rep_counts(overlay_reps)
   print(f'Overlaying video with these states: {overlay_states}')
   cap = cv2.VideoCapture(video_path)
@@ -291,21 +301,22 @@ def fill_rep_counts(counts):
   return counts
 
 def get_state_names():
-  with open('states.json', 'r') as filehandle:
+  with open(STATES_JSON, 'r') as filehandle:
     state_names = json.load(filehandle)['state_names']
   return state_names
 
 def get_state_descriptions():
-  with open('states.json', 'r') as filehandle:
+  with open(STATES_JSON, 'r') as filehandle:
     state_descriptions = json.load(filehandle)['state_descriptions']
   return state_descriptions
 
-STATE_DESCRIPTIONS = get_state_descriptions()
 
 def parse_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('video_path')
   parser.add_argument('classifier_samples_path')
+  parser.add_argument('states_json')
+  parser.add_argument('transition_matrix')
   parser.add_argument('--mode', default='Offline', help='Offline|Online (default=Offline)')
   parser.add_argument('--out_path', default=None)
   parser.add_argument('--count_reps', dest='count_reps', action='store_true')
@@ -321,10 +332,13 @@ if __name__ == '__main__':
   if video_path.isnumeric():
     video_path = airtable.download_video_by_ref(video_path)
 
+  STATES_JSON = args.states_json
+  STATE_DESCRIPTIONS = get_state_descriptions()
 
   demo_hmm_segmenter(
                       video_path, 
-                      args.classifier_samples_path, 
+                      args.classifier_samples_path,
+                      args.transition_matrix,
                       args.mode,
                       args.out_path,
 		      args.count_reps

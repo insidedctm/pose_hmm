@@ -1,0 +1,1 @@
+{"state_names": ["squat_to_plank_begin", "squat_to_plank_stand", "squat_to_plank_crouch", "squat_to_plank_plank", "squat_to_plank_finish"], "state_descriptions": ["Waiting to Start", "Stand", "Squat", "Plank", "Finished"]}

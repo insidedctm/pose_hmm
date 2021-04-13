@@ -1,0 +1,1 @@
+{"state_names": ["predator_jacks_begin", "predator_jacks_up", "predator_jacks_down", "predator_jacks_finish"], "state_descriptions": ["Waiting to Start", "Arms in", "Arms out", "Finished"]}
