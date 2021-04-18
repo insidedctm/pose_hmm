@@ -23,3 +23,16 @@ P = np.array([
 P = np.savetxt('transition_matrix_4_states.csv', P, delimiter=',')
 
 
+# Generic 6 state transition matrix
+# Setup transition matrix (Pair potentials)
+P = np.array([
+      [ 0.46, 0.22, 0.22, 0.0, 0.0, 0.0   ],
+      [ 0.0,  0.7,  0.28,   0.005, 0.005, 0.01 ],
+      [ 0.0,  0.1,  0.7,   0.1, 0.1, 0. ],
+      [ 0.0,  0.05,  0.25,   0.7, 0.0, 0.],
+      [ 0.0,  0.05,  0.25,    0.0, 0.7, 0.],
+      [ 0.0,  0.0,  0.0,   0.0, 0.0,  1.0]
+])
+P = np.savetxt('transition_matrix_6_states.csv', P, delimiter=',')
+
+

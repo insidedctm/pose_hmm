@@ -1,0 +1,1 @@
+{"state_names": ["kneeling_pushups_shoulder_tap_begin", "kneeling_pushups_shoulder_tap_down", "kneeling_pushups_shoulder_tap_up", "kneeling_pushups_shoulder_tap_ltap", "kneeling_pushups_shoulder_tap_rtap", "kneeling_pushups_shoulder_tap_finish"], "state_descriptions": ["Waiting to Start", "Down", "Up", "Left Shoulder Tap", "Right Shoulder Tap", "Finished"]}

@@ -1,0 +1,1 @@
+{"state_names": ["bent_over_row_begin", "bent_over_row_up", "bent_over_row_pushdown", "bent_over_row_down", "bent_over_row_pullup", "bent_over_row_finish"], "state_descriptions": ["Waiting to Start", "Up position", "Pushing down", "Down position", "Pulling up", "Finished"]}

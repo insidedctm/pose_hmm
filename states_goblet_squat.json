@@ -1,0 +1,1 @@
+{"state_names": ["goblet_squat_begin", "goblet_squat_up", "goblet_squat_down", "goblet_squat_finish"], "state_descriptions": ["Waiting to Start", "Up position", "Down position", "Finished"]}

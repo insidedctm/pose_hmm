@@ -1,0 +1,1 @@
+{"state_names": ["forward_fold_begin", "forward_fold_up", "forward_fold_bending", "forward_fold_down", "forward_fold_finish"], "state_descriptions": ["Waiting to Start", "Up position", "Bending down", "Down position", "Finished"]}

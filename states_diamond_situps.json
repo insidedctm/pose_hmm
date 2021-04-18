@@ -1,0 +1,1 @@
+{"state_names": ["diamond_situps_begin", "diamond_situps_lying", "diamond_situps_upright", "diamond_situps_fold", "diamond_situps_finish"], "state_descriptions": ["Waiting to Start", "Lying back", "Upright", "Forward", "Finished"]}
