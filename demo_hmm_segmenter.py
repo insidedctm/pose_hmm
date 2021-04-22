@@ -10,12 +10,15 @@ import json
 import airtable
 from rep_counter import RepCounter
 from math import floor
+from common import add_epsilon_to_matrix, add_epsilon
 
 STATES_JSON = 'states.json' # default value
 STATE_DESCRIPTIONS = []
 MAX_FLOAT = np.finfo(np.float32).max
 DEBUG = False
 DEBUG_POSE_SAMPLES_IMAGES_DIR = '/Users/robineast/projects/pose_knn_classifier/y_squats_poses_images_in'
+
+EPSILON = 1.0e-10
 
 def demo_hmm_segmenter(video_path, classifier_samples_folder, transition_matrix, mode, video_out_path, count_reps):
 
@@ -62,7 +65,10 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U, count_reps):
     reps = RepCounter(1,num_states-2)
 
   # first turn probabilities in U into neg log
-  priorU = make_array_neg_log(np.array(U[0]))  
+  priorU = np.array(U[0])
+  priorU = add_epsilon(priorU, EPSILON)
+  priorU = make_array_neg_log(np.array(priorU))  
+
   cap = cv2.VideoCapture(video_path)
   while True:
     ret, frame = cap.read()
@@ -82,7 +88,9 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U, count_reps):
       print(f'P(w|x): {p_w_bar_x}')
       # add each p(w|x) to lattice
       state_names = get_state_names()
-      U = make_array_neg_log(np.array([p_w_bar_x[state_name] if state_name in p_w_bar_x else 0. for state_name in state_names])) 
+      U = [p_w_bar_x[state_name] if state_name in p_w_bar_x else 0. for state_name in state_names]
+      U = add_epsilon(U, EPSILON)
+      U = make_array_neg_log(np.array(U)) 
       print(f'U=-log(P(w|x))={U}')
 
       state, priorU = online_viterbi(priorU, U, P)
