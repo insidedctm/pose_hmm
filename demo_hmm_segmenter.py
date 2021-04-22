@@ -9,10 +9,13 @@ from video_writer import VideoWriter
 import json
 import airtable
 from rep_counter import RepCounter
+from math import floor
 
 STATES_JSON = 'states.json' # default value
 STATE_DESCRIPTIONS = []
 MAX_FLOAT = np.finfo(np.float32).max
+DEBUG = False
+DEBUG_POSE_SAMPLES_IMAGES_DIR = '/Users/robineast/projects/pose_knn_classifier/y_squats_poses_images_in'
 
 def demo_hmm_segmenter(video_path, classifier_samples_folder, transition_matrix, mode, video_out_path, count_reps):
 
@@ -25,9 +28,6 @@ def demo_hmm_segmenter(video_path, classifier_samples_folder, transition_matrix,
       pose_embedder=pose_embedder,
       top_n_by_max_distance=30,
       top_n_by_mean_distance=10)
-
-  
-  
 
   # initialise Pose estimator for whole video
   pose = mp_pose.Pose(
@@ -83,6 +83,7 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U, count_reps):
       # add each p(w|x) to lattice
       state_names = get_state_names()
       U = make_array_neg_log(np.array([p_w_bar_x[state_name] if state_name in p_w_bar_x else 0. for state_name in state_names])) 
+      print(f'U=-log(P(w|x))={U}')
 
       state, priorU = online_viterbi(priorU, U, P)
 
@@ -94,6 +95,11 @@ def online_hmm_segmenter(video_path, pose, pose_classifier, P, U, count_reps):
       frame = overlay(frame, state_name, len(state_names))
       if count_reps:
         frame = overlay_rep_count(frame, reps.rep_count())
+
+    if DEBUG:
+      #mp_drawing.draw_landmarks(
+      #  frame, pose_landmarks, mp_pose.POSE_CONNECTIONS)
+      frame = overlay_debug_classification(frame, pose_classifier.last_classification_filenames)
 
     cv2.imshow('online segmenter', frame)  
     cv2.waitKey(15)
@@ -155,14 +161,28 @@ def offline_hmm_segmenter(video_path, video_out_path, pose, pose_classifier, P, 
   writer.release()
 
 def online_viterbi(priorU, U, P):
+  if DEBUG:
+    print(f'[online_viterbi] priorU={priorU}')
 
   # number of states
   K = P.shape[0]
 
   for k in range(K):
     costs = [priorU[j] + P[j,k] + U[k] for j in range(K)]
+    if DEBUG:
+      print(f'[online_viterbi]   k={k}')
+      print(f'[online_viterbi]   P[:,k]={P[:,k]}')
+      print(f'[online_viterbi]   U[k]={U[k]}')
+      print(f'[online_viterbi]   costs={costs}')
+
     U[k] = min(costs)
+
   state = np.argmin(U[:])
+
+  if DEBUG:
+    print(f'[online_viterbi] updated U={U}')
+    print(f'[online_viterbi] state={state}')
+
   return state, U
     
 def viterbi(U, P):
@@ -310,6 +330,20 @@ def get_state_descriptions():
     state_descriptions = json.load(filehandle)['state_descriptions']
   return state_descriptions
 
+def overlay_debug_classification(frame, last_classification_filenames):
+  h, w, c = frame.shape
+  debug_images_height = int(0.15 * h)
+  debug_images_width  = floor(w / 10.0)
+  new_h = h + debug_images_height
+  new_frame = np.zeros((new_h, w, c), dtype=frame.dtype)
+  new_frame[0:h, 0:w, :] = frame
+  for ix, fname in enumerate(last_classification_filenames):
+    full_path = f'{DEBUG_POSE_SAMPLES_IMAGES_DIR}/{fname}'
+    sample_img = cv2.imread(full_path)
+    dim = (debug_images_width, debug_images_height)
+    sample_img = cv2.resize(sample_img, dim)
+    new_frame[h:h+debug_images_height, debug_images_width*ix:debug_images_width*(ix+1),:] = sample_img
+  return new_frame
 
 def parse_args():
   parser = argparse.ArgumentParser()
